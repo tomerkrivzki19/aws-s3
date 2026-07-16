@@ -38,6 +38,7 @@ app.use(
     origin: "http://127.0.0.1:5500",
   }),
 );
+
 // putting multer as a middlware
 app.use("/upload", upload.single("file"));
 

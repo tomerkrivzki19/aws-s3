@@ -15,15 +15,15 @@ async function uploadFile(event) {
       return;
     }
 
-    console.log(file);
+    // console.log(file);
 
     const formData = new FormData();
     formData.append("file", file);
 
-    console.log("formData", formData);
-for (const value of formData.values()) {
-  console.log(value);
-}
+    // console.log("formData", formData);
+    for (const value of formData.values()) {
+      console.log(value);
+    }
     const response = await fetch("http://127.0.0.1:3000/upload", {
       method: "POST",
       body: formData,
