@@ -15,13 +15,19 @@ const { randomUUID } = require("crypto");
 const app = express();
 const PORT = 3000;
 
+// main project - we are storing the keys in AWS section
+// const s3 = new S3Client({
+//   region: process.env.AWS_REGION,
+//   credentials: {
+//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//   },
+// });
+// const BUCKET = process.env.S3_BUCKET;
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
 });
+
 const BUCKET = process.env.S3_BUCKET;
 
 // Multer keeps the uploaded file temporarily in RAM.
@@ -34,9 +40,10 @@ const posts = [];
 app.use(express.static("public")); //making a configuration to the server that it will accept a static filles > static -> things that will not change when the server is running | also it is a shorcut for the path.... ( avoiding importing all the times )
 
 app.use(
-  cors({
-    origin: process.env.CLIENT_URL,
-  }),
+  // cors({
+  //   origin: process.env.CLIENT_URL,
+  // }),
+  cors(),
 );
 
 // putting multer as a middlware
