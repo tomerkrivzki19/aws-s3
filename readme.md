@@ -1,30 +1,25 @@
-# Cloud Images Upload with AWS S3 & Docker
+# Cloud Images - Production Deployment Pipeline
 
-A simple Node.js application developed as part of a class assignment to demonstrate file uploads to an Amazon S3 bucket using the AWS SDK. The project is fully containerized with Docker and includes GitHub Actions for automatic image builds and deployment to Docker Hub.
+A production-ready Node.js application that allows users to upload images to Amazon S3. The project demonstrates a complete cloud deployment pipeline using Docker, Amazon ECS Fargate, Application Load Balancer, IAM Roles, Amazon ECR, and GitHub Actions.
+
+This project was developed as part of a DevOps coursework assignment focusing on containerization, cloud deployment, infrastructure, and CI/CD automation.
 
 ---
 
-## 📌 Project Overview
+# Project Overview
 
 The application allows users to:
 
-- Upload an image through a web interface
-- Send the image to a Node.js backend
-- Store the uploaded image in an AWS S3 bucket
-- Run the entire application inside a Docker container
-
-This project demonstrates the integration of:
-
-- Node.js
-- Express.js
-- AWS S3
-- Docker
-- Docker Compose
-- GitHub Actions (CI/CD)
+- Upload an image from the browser
+- Store the image securely in Amazon S3
+- Run inside Docker containers
+- Deploy automatically to AWS ECS Fargate
+- Scale behind an Application Load Balancer
+- Use IAM Task Roles instead of AWS credentials
 
 ---
 
-## 🚀 Technologies Used
+# Technologies Used
 
 - Node.js
 - Express.js
@@ -33,6 +28,10 @@ This project demonstrates the integration of:
 - Amazon S3
 - Docker
 - Docker Compose
+- Amazon ECS Fargate
+- Amazon ECR
+- Application Load Balancer (ALB)
+- IAM Task Roles
 - GitHub Actions
 - HTML
 - CSS
@@ -40,10 +39,46 @@ This project demonstrates the integration of:
 
 ---
 
-## 📂 Project Structure
+# Architecture
+
+```
+                GitHub
+                   │
+                   ▼
+            GitHub Actions
+                   │
+                   ▼
+             Amazon ECR
+                   │
+                   ▼
+        Amazon ECS Fargate Service
+                   │
+         ┌─────────┴─────────┐
+         │                   │
+      Task 1              Task 2
+         │                   │
+         └─────────┬─────────┘
+                   │
+                   ▼
+      Application Load Balancer
+                   │
+                   ▼
+                Users
+                   │
+                   ▼
+               Amazon S3
+```
+
+---
+
+# Project Structure
 
 ```
 cloud-images/
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 │
 ├── public/
 │   ├── index.html
@@ -53,32 +88,30 @@ cloud-images/
 ├── app.js
 ├── Dockerfile
 ├── docker-compose.yml
-├── .dockerignore
+├── task-definition.json
 ├── package.json
+├── .dockerignore
 └── README.md
 ```
 
 ---
 
-## ⚙️ Features
+# Features
 
-- Upload images from the browser
-- Store files securely in an AWS S3 bucket
-- Dockerized backend
-- Environment variable configuration
-- CORS support
-- GitHub Actions workflow for automatic Docker image builds
+- Image upload from browser
+- Store images in Amazon S3
+- Dockerized application
+- Local development with Docker Compose
+- Production deployment using ECS Fargate
+- Application Load Balancer
+- Health checks
+- IAM Task Role authentication
+- Environment variables
+- Automatic deployment pipeline
 
 ---
 
-## 🔧 Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/cloud-images.git
-cd cloud-images
-```
+# Running Locally
 
 Install dependencies:
 
@@ -86,37 +119,13 @@ Install dependencies:
 npm install
 ```
 
----
-
-## 🔑 Environment Variables
-
-Create a `.env` file in the project root.
-
-```env
-AWS_ACCESS_KEY_ID=YOUR_ACCESS_KEY
-AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY
-AWS_REGION=YOUR_REGION
-AWS_BUCKET_NAME=YOUR_BUCKET_NAME
-CLIENT_URL=http://127.0.0.1:8080
-```
-
----
-
-## 🐳 Running with Docker
-
-Build the Docker image:
+Run locally:
 
 ```bash
-docker build -t cloud-images .
+npm start
 ```
 
-Run the container:
-
-```bash
-docker run -p 8080:3000 --env-file .env cloud-images
-```
-
-Or with Docker Compose:
+Or using Docker:
 
 ```bash
 docker compose up --build
@@ -124,66 +133,118 @@ docker compose up --build
 
 ---
 
-## ☁️ AWS S3 Integration
+# Environment Variables
 
-The application uploads images directly to an Amazon S3 bucket using the AWS SDK v3.
+Only non-sensitive configuration is stored in the environment.
 
-Upload Flow:
-
-```
-Browser
-      │
-      ▼
-Express Server
-      │
-      ▼
-AWS SDK
-      │
-      ▼
-Amazon S3 Bucket
+```env
+AWS_REGION=eu-north-1
+S3_BUCKET=your-bucket-name
 ```
 
----
+AWS credentials are **not** stored inside:
 
-## 🔄 CI/CD
-
-GitHub Actions automatically:
-
-- Builds the Docker image
-- Logs in to Docker Hub
-- Pushes the latest Docker image
-
-Every push to the main branch triggers the workflow.
-
----
-
-## 📖 Learning Objectives
-
-This project was created to practice:
-
-- REST API development
-- File uploads with Multer
-- AWS S3 integration
+- Source code
+- Docker image
+- GitHub
 - Environment variables
-- Docker containerization
-- Docker Compose
-- GitHub Actions CI/CD
-- Working with cloud services
+
+The production application receives temporary credentials automatically through an **IAM Task Role**.
 
 ---
 
-## 📸 Demo
+# AWS Services Used
 
-Users can:
+This project uses the following AWS services:
 
-1. Select an image
-2. Upload it through the browser
-3. Store it securely inside an AWS S3 bucket
+- Amazon S3
+- Amazon ECS
+- Amazon ECR
+- Amazon Fargate
+- Application Load Balancer
+- IAM Roles
+- CloudWatch Logs
 
 ---
 
-## 👨‍💻 Author
+# CI/CD Pipeline
 
-Developed by **Tomer Krivizki**
+Every push to the **main** branch automatically triggers GitHub Actions.
 
-As part of a cloud computing and Docker coursework project.
+Pipeline:
+
+```
+Git Push
+    │
+    ▼
+GitHub Actions
+    │
+    ▼
+Build Docker Image
+    │
+    ▼
+Push Image to Amazon ECR
+    │
+    ▼
+Deploy Updated Task Definition
+    │
+    ▼
+Amazon ECS Service
+```
+
+---
+
+# Security
+
+The project follows AWS security best practices.
+
+Instead of storing:
+
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+the application authenticates using an IAM Task Role attached to the ECS Task Definition.
+
+This allows temporary credentials to be generated automatically by AWS.
+
+---
+
+# Challenges Solved
+
+During development several production issues were resolved:
+
+- Docker container networking
+- ECS Task Definition configuration
+- Application Load Balancer setup
+- Health check failures
+- IAM permissions
+- Amazon ECR authentication
+- ECS deployment configuration
+- Docker multi-stage builds
+- Uploading files to Amazon S3 without storing AWS credentials
+
+---
+
+# Learning Objectives
+
+This project demonstrates practical experience with:
+
+- Docker
+- Containerization
+- Amazon ECS
+- Amazon ECR
+- Amazon S3
+- IAM Roles
+- Application Load Balancer
+- Production deployments
+- CI/CD with GitHub Actions
+- Cloud infrastructure
+- DevOps workflows
+
+---
+
+# Author
+
+**Tomer Krivizki**
+
+Developed as part of a DevOps Production Deployment Pipeline coursework project.
