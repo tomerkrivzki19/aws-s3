@@ -26,12 +26,84 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug GitHub context
+        shell: bash
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Repository owner: $GITHUB_REPOSITORY_OWNER"
+          echo "Workflow: $GITHUB_WORKFLOW"
+          echo "Event: $GITHUB_EVENT_NAME"
+          echo "Ref: $GITHUB_REF"
+          echo "Ref name: $GITHUB_REF_NAME"
+          echo "SHA: $GITHUB_SHA"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Server URL: $GITHUB_SERVER_URL"
+
+      - name: Debug GitHub OIDC claims
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import os
+          import json
+          import base64
+          import urllib.parse
+          import urllib.request
+
+          request_url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
+          separator = "&" if "?" in request_url else "?"
+
+          url = (
+              request_url
+              + separator
+              + urllib.parse.urlencode({
+                  "audience": "sts.amazonaws.com"
+              })
+          )
+
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "Authorization":
+                      "Bearer "
+                      + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
+              }
+          )
+
+          with urllib.request.urlopen(request) as response:
+              token = json.load(response)["value"]
+
+          encoded_payload = token.split(".")[1]
+          encoded_payload += "=" * (-len(encoded_payload) % 4)
+
+          payload = json.loads(
+              base64.urlsafe_b64decode(encoded_payload).decode("utf-8")
+          )
+
+          safe_claims = {
+              "iss": payload.get("iss"),
+              "aud": payload.get("aud"),
+              "sub": payload.get("sub"),
+              "repository": payload.get("repository"),
+              "repository_id": payload.get("repository_id"),
+              "repository_owner": payload.get("repository_owner"),
+              "repository_owner_id": payload.get("repository_owner_id"),
+              "ref": payload.get("ref"),
+              "ref_type": payload.get("ref_type"),
+              "workflow": payload.get("workflow"),
+              "event_name": payload.get("event_name"),
+              "environment": payload.get("environment")
+          }
+
+          print(json.dumps(safe_claims, indent=2))
+          PY
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
           role-to-assume: arn:aws:iam::750906968747:role/cloud-images-deploy-role
           aws-region: ${{ env.AWS_REGION }}
           allowed-account-ids: "750906968747"
+          retry-max-attempts: 3
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
@@ -47,8 +119,10 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
           docker build -t "$IMAGE_URI" .
           docker push "$IMAGE_URI"
+
           echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
       - name: Render ECS task definition
