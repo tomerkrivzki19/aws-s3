@@ -12,7 +12,7 @@ permissions:
 env:
   AWS_REGION: eu-north-1
   ECR_REPOSITORY: cloud-images
-  ECS_CLUSTER: cloud-images-cluster
+  ECS_CLUSTER: cloud-images-task
   ECS_SERVICE: cloud-images-service
   ECS_TASK_DEFINITION: task-definition.json
   CONTAINER_NAME: cloud-images
